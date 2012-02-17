@@ -11,11 +11,11 @@
 define: false, process: false, window: false */  
 define([
 //>>excludeStart('excludeAfterBuild', pragmas.excludeAfterBuild)
-'Handlebars', 'underscore', 'Handlebars/i18nprecompile', 'json2'
+'Handlebars', 'underscore', 'json2'
 //>>excludeEnd('excludeAfterBuild')
 ], function (
 //>>excludeStart('excludeAfterBuild', pragmas.excludeAfterBuild)
- Handlebars, _, precompile, JSON
+ Handlebars, _, JSON
 //>>excludeEnd('excludeAfterBuild')
 ) {
 // NOTE :: if you want to load template in production outside of the build, either precompile
@@ -98,6 +98,14 @@ define([
             callback(text);
         };
     }
+
+    function precompile(string, mapping, options) {
+      options = options || {};
+      var ast = Handlebars.parse(string),
+          environment = new Handlebars.Compiler().compile(ast, options);
+      return new Handlebars.JavaScriptCompiler().compile(environment, options);
+    }
+
 
     var cache = {};
     var fetchOrGetCached = function ( path, callback ){
@@ -282,8 +290,6 @@ define([
             }
 
             var path = parentRequire.toUrl(name + templateExtension);
-            fetchOrGetCached( parentRequire.toUrl('template/i18n/'+(config.locale || "en_us")+'.json'), function (langMap) {
-              langMap = JSON.parse(langMap);
               fetchText(path, function (text) {
                   // for some reason it doesn't include hbs _first_ when i don't add it here...
                   var nodes = Handlebars.parse(text),
@@ -365,7 +371,7 @@ define([
                                       "t.vars = " + JSON.stringify(vars) + ";\n";
                   }
 
-                  var prec = precompile( text, _.extend( langMap, config.localeMapping ) );
+                  var prec = precompile(text);
                   
                   text = "/* START_TEMPLATE */\n" +
                          "define(['hbs','Handlebars'"+depStr+helpDepStr+"], function( hbs, Handlebars ){ \n" +
@@ -418,7 +424,6 @@ define([
                     });
                   }
               });
-            });
           //>>excludeEnd('excludeAfterBuild')
         }
       };
